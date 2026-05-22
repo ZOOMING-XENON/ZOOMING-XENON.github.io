@@ -4,6 +4,10 @@ title: About me
 subtitle: Why you'd want to go on a date with me
 ---
 
+<p align="center">
+  <img src="/assets/img/zhexi.JPG" alt="Zhexi" width="300">
+</p>
+
 My name is Inigo Montoya. I have the following qualities:
 
 - I rock a great mustache
