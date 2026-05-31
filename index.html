@@ -1,4 +1,36 @@
 ---
-layout: home
-title: ZhexiFang's Homepage
+layout: page
+title: ZhexiFang
+subtitle: PLACEHOLDER —— 一句话介绍
 ---
+
+<!-- About 预览：完整内容见 /aboutme -->
+<section class="home-about">
+  <h2>About Me</h2>
+  <p>PLACEHOLDER —— 个人简介占位（一两句话），完整介绍点下方链接。</p>
+  <a class="btn btn-primary" href="{{ '/aboutme' | relative_url }}">More about me &rarr;</a>
+</section>
+
+<hr/>
+
+<!-- 最新 News：取最近 3 篇，全部文章见 /blog -->
+<section class="home-news">
+  <h2>Latest News</h2>
+  <ul class="posts-list list-unstyled" role="list">
+    {% for post in site.posts limit: 3 %}
+    <li class="post-preview">
+      <a href="{{ post.url | relative_url }}">
+        <h3 class="post-title">{{ post.title | strip_html }}</h3>
+        {% if post.subtitle %}
+        <h4 class="post-subtitle">{{ post.subtitle | strip_html }}</h4>
+        {% endif %}
+      </a>
+      <p class="post-meta">
+        {% assign date_format = site.date_format | default: "%B %-d, %Y" %}
+        {{ post.date | date: date_format }}
+      </p>
+    </li>
+    {% endfor %}
+  </ul>
+  <a class="btn btn-primary" href="{{ '/blog' | relative_url }}">View all posts &rarr;</a>
+</section>
