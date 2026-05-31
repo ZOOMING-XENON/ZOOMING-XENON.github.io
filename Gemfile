@@ -11,6 +11,12 @@ end
 
 # Performance-booster for watching directories on Windows
 gem "wdm", "~> 0.1", :platforms => [:mingw, :x64_mingw, :mswin]
-  
+
+# Gems removed from Ruby's default set in 3.4+ that Jekyll/Liquid still need
+gem "bigdecimal"
+gem "csv"
+gem "base64"
+gem "logger"
+
 gemspec
 

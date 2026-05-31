@@ -18,23 +18,19 @@
   {%- if network[0] == "email" -%}
   <li class="list-inline-item">
     <a href="mailto:{{ network[1] }}" title="Email me">
-      <span class="fa-stack fa-lg" aria-hidden="true">
-        <i class="fas fa-circle fa-stack-2x"></i>
-        <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
-      </span>
+      <img src="{{ '/assets/img/gmail_logo.jpg' | relative_url }}" alt="Email me"
+           style="height:1.4em;width:auto;vertical-align:middle;" aria-hidden="true">
       <span class="sr-only">Email me</span>
    </a>
   </li>
   {%- endif -%}
 
-  {%- comment -%} Xiaohongshu（小红书）：FontAwesome 暂无官方图标，先用占位图标，替换为真实 logo 即可 {%- endcomment -%}
+  {%- comment -%} Xiaohongshu（小红书）：FontAwesome 无官方图标，使用本地 logo 图片 {%- endcomment -%}
   {%- if network[0] == "xiaohongshu" -%}
   <li class="list-inline-item">
     <a href="https://www.xiaohongshu.com/user/profile/{{ network[1] }}" title="Xiaohongshu">
-      <span class="fa-stack fa-lg" aria-hidden="true">
-        <i class="fas fa-circle fa-stack-2x"></i>
-        <i class="fas fa-book fa-stack-1x fa-inverse"></i>
-      </span>
+      <img src="{{ '/assets/img/xiaohongshu_logo.png' | relative_url }}" alt="Xiaohongshu"
+           style="width:1.7em;height:1.7em;border-radius:22%;vertical-align:middle;" aria-hidden="true">
       <span class="sr-only">Xiaohongshu</span>
     </a>
   </li>
