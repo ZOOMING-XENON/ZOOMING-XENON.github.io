@@ -6,7 +6,7 @@
   // ---- 可调参数 ----
   var CONFIG = {
     // 背景照片
-    bgImage: "/assets/img/home_background.JPG",
+    bgImage: "/assets/img/home_background_compressed.jpg",
     bgPosition: "center", // 照片焦点：center / top / "50% 35%" 等
 
     // 点阵
