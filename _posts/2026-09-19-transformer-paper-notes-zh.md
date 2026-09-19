@@ -33,28 +33,28 @@ Transformer 的整体架构如图：
 
 ## Token embedding
 
-输入的文字首先会被分词（tokenization），然后执行 embedding。原论文在 3.4 节中的意思是：输入 token 和输出 token 都通过可学习的 embedding 映射为 $d_{model}$ 维向量；decoder 的最终输出再经过线性变换和 softmax，得到下一个 token 的概率分布。
+输入的文字首先会被分词（tokenization），然后执行 embedding。原论文在 3.4 节中的意思是：输入 token 和输出 token 都通过可学习的 embedding 映射为 $d_{\mathrm{model}}$ 维向量；decoder 的最终输出再经过线性变换和 softmax，得到下一个 token 的概率分布。
 
 大概流程是：字符串“今天我在图书馆读书”被 tokenizer 切成若干 token，例如“今天 / 我 / 在 / 图书馆 / 读书”。这只是为了说明流程，实际如何切分取决于 tokenizer，token 不一定刚好是一个完整的词。之后每个 token 会被映射成词表中的一个 id，例如“我”对应 19，“图书馆”对应 2994。
 
-假设词表大小为 $V=30000$，原论文的 $d_{model}=512$，那么可以学习一个 embedding 矩阵：
+假设词表大小为 $V=30000$，原论文的 $d_{\mathrm{model}}=512$，那么可以学习一个 embedding 矩阵：
 
 $$
-E\in\mathbb{R}^{V\times d_{model}}
+E\in\mathbb{R}^{V\times d_{\mathrm{model}}}
 =\mathbb{R}^{30000\times512}.
 $$
 
 token id 就是在这个矩阵中取出对应的一行。因此，单个 token 的 embedding 是一个 $512$ 维向量；含有 $n$ 个 token 的句子会得到矩阵：
 
 $$
-X_{emb}\in\mathbb{R}^{n\times d_{model}}.
+X_{\mathrm{emb}}\in\mathbb{R}^{n\times d_{\mathrm{model}}}.
 $$
 
-这里每一行对应一个 token，每一列对应表示空间中的一个特征维度。真实代码中通常还有 batch 维度，张量形状是 $[B,n,d_{model}]$。为了让后面的公式好看，本文都先省略 batch 维度。
+这里每一行对应一个 token，每一列对应表示空间中的一个特征维度。真实代码中通常还有 batch 维度，张量形状是 $[B,n,d_{\mathrm{model}}]$。为了让后面的公式好看，本文都先省略 batch 维度。
 
 原论文还有两个容易略过的细节：
 
-- embedding 向量在与位置编码相加前会乘以 $\sqrt{d_{model}}$；
+- embedding 向量在与位置编码相加前会乘以 $\sqrt{d_{\mathrm{model}}}$；
 - 两个 embedding 层与最终 softmax 前的线性层共享同一套权重。这里的两个 embedding 层指 encoder 的输入 embedding 和 decoder 的输出语言 embedding。原论文使用共享词表，因此可以这样做。
 
 ## Positional encoding
@@ -68,42 +68,42 @@ $$
 原论文使用固定的正弦、余弦位置编码：
 
 $$
-PE(pos,2i)=\sin\left(\frac{pos}{10000^{2i/d_{model}}}\right),
+\operatorname{PE}(\mathrm{pos},2i)=\sin\left(\frac{\mathrm{pos}}{10000^{2i/d_{\mathrm{model}}}}\right),
 $$
 
 $$
-PE(pos,2i+1)=\cos\left(\frac{pos}{10000^{2i/d_{model}}}\right).
+\operatorname{PE}(\mathrm{pos},2i+1)=\cos\left(\frac{\mathrm{pos}}{10000^{2i/d_{\mathrm{model}}}}\right).
 $$
 
-其中 $pos$ 是 token 在序列中的位置，$i$ 表示第几组正弦/余弦频率，取值为
+其中 $\mathrm{pos}$ 是 token 在序列中的位置，$i$ 表示第几组正弦/余弦频率，取值为
 
 $$
-i=0,1,\ldots,\frac{d_{model}}{2}-1.
+i=0,1,\ldots,\frac{d_{\mathrm{model}}}{2}-1.
 $$
 
-所以我原先写“$i$ 不能简单理解为 dimension”这个直觉基本是对的，但可以再精确一点：$i$ 是频率组的下标，一组 $i$ 对应两个维度 $2i$ 和 $2i+1$。当 $d_{model}=512$ 时，$i$ 的取值是 $0\sim255$，最后覆盖位置向量的 $0\sim511$ 维，而不是 $0\sim256$。
+所以我原先写“$i$ 不能简单理解为 dimension”这个直觉基本是对的，但可以再精确一点：$i$ 是频率组的下标，一组 $i$ 对应两个维度 $2i$ 和 $2i+1$。当 $d_{\mathrm{model}}=512$ 时，$i$ 的取值是 $0\sim255$，最后覆盖位置向量的 $0\sim511$ 维，而不是 $0\sim256$。
 
-例如，对于 $pos=3$ 的 token：
+例如，对于 $\mathrm{pos}=3$ 的 token：
 
 $$
 \begin{aligned}
-PE(3,0)&=\sin(3),\\
-PE(3,1)&=\cos(3),\\
-PE(3,2)&=\sin\left(\frac{3}{10000^{2/512}}\right),\\
-PE(3,3)&=\cos\left(\frac{3}{10000^{2/512}}\right),\\
+\operatorname{PE}(3,0)&=\sin(3),\\
+\operatorname{PE}(3,1)&=\cos(3),\\
+\operatorname{PE}(3,2)&=\sin\left(\frac{3}{10000^{2/512}}\right),\\
+\operatorname{PE}(3,3)&=\cos\left(\frac{3}{10000^{2/512}}\right),\\
 &\ \vdots\\
-PE(3,510)&=\sin\left(\frac{3}{10000^{510/512}}\right),\\
-PE(3,511)&=\cos\left(\frac{3}{10000^{510/512}}\right).
+\operatorname{PE}(3,510)&=\sin\left(\frac{3}{10000^{510/512}}\right),\\
+\operatorname{PE}(3,511)&=\cos\left(\frac{3}{10000^{510/512}}\right).
 \end{aligned}
 $$
 
 这样会得到一个 512 维的位置向量。它与 token embedding 是逐元素相加，而不是拼接：
 
 $$
-X_0=\sqrt{d_{model}}X_{emb}+PE.
+X_0=\sqrt{d_{\mathrm{model}}}X_{\mathrm{emb}}+\mathrm{PE}.
 $$
 
-相加后维度仍然是 $n\times512$，因此后面的每个子层都可以保持统一的 $d_{model}$。论文还提到，作者试过学习式位置编码，结果和正弦位置编码接近；选择正弦编码，是因为它有希望外推到训练时没有见过的更长序列。
+相加后维度仍然是 $n\times512$，因此后面的每个子层都可以保持统一的 $d_{\mathrm{model}}$。论文还提到，作者试过学习式位置编码，结果和正弦位置编码接近；选择正弦编码，是因为它有希望外推到训练时没有见过的更长序列。
 
 ![加入位置编码后的输入](/assets/img/transformer-notes/positional-encoding-example.png)
 
@@ -133,18 +133,18 @@ x_2\\
 \vdots\\
 x_n
 \end{bmatrix}
-\in\mathbb{R}^{n\times d_{model}},
+\in\mathbb{R}^{n\times d_{\mathrm{model}}},
 $$
 
-其中 $x_j\in\mathbb{R}^{d_{model}}$ 是第 $j$ 个 token 的行向量，那么
+其中 $x_j\in\mathbb{R}^{d_{\mathrm{model}}}$ 是第 $j$ 个 token 的行向量，那么
 
 $$
-W^Q\in\mathbb{R}^{d_{model}\times d_k},\qquad
-W^K\in\mathbb{R}^{d_{model}\times d_k},\qquad
-W^V\in\mathbb{R}^{d_{model}\times d_v}.
+W^Q\in\mathbb{R}^{d_{\mathrm{model}}\times d_k},\qquad
+W^K\in\mathbb{R}^{d_{\mathrm{model}}\times d_k},\qquad
+W^V\in\mathbb{R}^{d_{\mathrm{model}}\times d_v}.
 $$
 
-注意：投影矩阵的第一维是 $d_{model}$，不是 token 数 $n$。模型必须能处理不同长度的句子，所以可学习参数的大小不能依赖当前句长。
+注意：投影矩阵的第一维是 $d_{\mathrm{model}}$，不是 token 数 $n$。模型必须能处理不同长度的句子，所以可学习参数的大小不能依赖当前句长。
 
 随后：
 
@@ -160,7 +160,7 @@ $$
 V=XW^V\in\mathbb{R}^{n\times d_v}.
 $$
 
-$d_q$ 和 $d_k$ 必须相等，才能计算 $QK^T$。一般直接把共同的维度写成 $d_k$。$d_v$ 不必等于 $d_{model}$；在原论文的每个 head 中，$d_k=d_v=64$。
+$d_q$ 和 $d_k$ 必须相等，才能计算 $QK^T$。一般直接把共同的维度写成 $d_k$。$d_v$ 不必等于 $d_{\mathrm{model}}$；在原论文的每个 head 中，$d_k=d_v=64$。
 
 ### 2. 计算 query 与 key 的匹配分数
 
@@ -201,8 +201,8 @@ $$
 更完整的公式是：
 
 $$
-Attention(Q,K,V)
-=softmax\left(\frac{QK^T}{\sqrt{d_k}}+M\right)V.
+\operatorname{Attention}(Q,K,V)
+=\operatorname{softmax}\left(\frac{QK^T}{\sqrt{d_k}}+M\right)V.
 $$
 
 对于不允许被关注的位置，mask 矩阵 $M$ 中对应的值设为 $-\infty$；其他位置设为 0。经过 softmax 后，被屏蔽位置的权重就变为 0。
@@ -245,25 +245,25 @@ $$
 为了避免符号混乱，先把送进 attention 子层的三组输入记为 $X_Q$、$X_K$、$X_V$：
 
 $$
-head_i=Attention(X_QW_i^Q,X_KW_i^K,X_VW_i^V),
+\mathrm{head}_i=\operatorname{Attention}(X_QW_i^Q,X_KW_i^K,X_VW_i^V),
 $$
 
 $$
-MultiHead(X_Q,X_K,X_V)
-=Concat(head_1,\ldots,head_h)W^O.
+\operatorname{MultiHead}(X_Q,X_K,X_V)
+=\operatorname{Concat}(\mathrm{head}_1,\ldots,\mathrm{head}_h)W^O.
 $$
 
 每个 head 的投影矩阵为：
 
 $$
-W_i^Q,W_i^K\in\mathbb{R}^{d_{model}\times d_k},\qquad
-W_i^V\in\mathbb{R}^{d_{model}\times d_v}.
+W_i^Q,W_i^K\in\mathbb{R}^{d_{\mathrm{model}}\times d_k},\qquad
+W_i^V\in\mathbb{R}^{d_{\mathrm{model}}\times d_v}.
 $$
 
 原论文中：
 
 $$
-h=8,\qquad d_k=d_v=\frac{d_{model}}{h}=\frac{512}{8}=64.
+h=8,\qquad d_k=d_v=\frac{d_{\mathrm{model}}}{h}=\frac{512}{8}=64.
 $$
 
 这里的 64 维不是从原来的 512 维中直接挑出 64 维。每个投影矩阵都会读取完整的 512 维，再把它们线性组合成一套新的 64 维表示。
@@ -271,18 +271,18 @@ $$
 因此，每个 head 的输出形状是 $n_q\times64$。沿最后一个特征维拼接 8 个 head 后：
 
 $$
-Concat(head_1,\ldots,head_8)
+\operatorname{Concat}(\mathrm{head}_1,\ldots,\mathrm{head}_8)
 \in\mathbb{R}^{n_q\times512}.
 $$
 
 最后：
 
 $$
-W^O\in\mathbb{R}^{hd_v\times d_{model}}
+W^O\in\mathbb{R}^{hd_v\times d_{\mathrm{model}}}
 =\mathbb{R}^{512\times512}.
 $$
 
-$W^O$ 的作用不只是“把维度变回去”。它会对各个 head 输出的特征做一次可学习的混合，并把结果映射回 $d_{model}$，这样才能与子层输入做残差相加。如果没有 $W^O$，不同 head 的结果只是被机械地摆在一起，后续无法在这个子层末尾重新组合它们。
+$W^O$ 的作用不只是“把维度变回去”。它会对各个 head 输出的特征做一次可学习的混合，并把结果映射回 $d_{\mathrm{model}}$，这样才能与子层输入做残差相加。如果没有 $W^O$，不同 head 的结果只是被机械地摆在一起，后续无法在这个子层末尾重新组合它们。
 
 ![Multi-Head Attention](/assets/img/transformer-notes/multi-head-attention.png)
 
@@ -301,7 +301,7 @@ $W^O$ 的作用不只是“把维度变回去”。它会对各个 head 输出�
 按照数据流动顺序，attention 后面是 Add & Norm。原论文对每个子层使用：
 
 $$
-LayerNorm(x+Sublayer(x)).
+\operatorname{LayerNorm}(x+\operatorname{Sublayer}(x)).
 $$
 
 其中 `Sublayer` 可以是 multi-head attention，也可以是 feed-forward network。论文还会先对子层输出做 dropout，再与 $x$ 相加。这个结构现在常被称为 Post-LN，因为 LayerNorm 放在残差相加之后；很多现代 Transformer 会改用 Pre-LN，但那已经不是 Figure 1 中的原始结构了。
@@ -310,7 +310,7 @@ $$
 
 LayerNorm 则对每个 token 的特征维做归一化，再用可学习参数进行缩放和平移。它不依赖 batch 中其他样本的统计量，比较适合长度不同的序列。
 
-另外，残差相加要求两边形状一致。这也是每个子层最后都回到 $d_{model}=512$ 的直接原因之一。
+另外，残差相加要求两边形状一致。这也是每个子层最后都回到 $d_{\mathrm{model}}=512$ 的直接原因之一。
 
 ## Position-wise Feed-Forward Network
 
@@ -319,7 +319,7 @@ LayerNorm 则对每个 token 的特征维做归一化，再用可学习参数进
 每个 encoder/decoder 层还包含一个逐位置的前馈网络：
 
 $$
-FFN(x)=\max(0,xW_1+b_1)W_2+b_2.
+\operatorname{FFN}(x)=\max(0,xW_1+b_1)W_2+b_2.
 $$
 
 原论文使用 ReLU，维度变化为：
@@ -343,7 +343,7 @@ decoder 的每一层比 encoder 多一个 cross-attention 子层，顺序是：
 每个子层外面都有残差连接和 LayerNorm。经过 6 层 decoder 后，会得到每个目标位置的隐藏向量：
 
 $$
-H\in\mathbb{R}^{n_t\times d_{model}}.
+H\in\mathbb{R}^{n_t\times d_{\mathrm{model}}}.
 $$
 
 ![Linear 与 Softmax 输出层](/assets/img/transformer-notes/linear-softmax.png)
@@ -351,7 +351,7 @@ $$
 随后通过线性层投影到词表大小：
 
 $$
-Z=HW_{vocab}^T+b,
+Z=HW_{\mathrm{vocab}}^T+b,
 \qquad
 Z\in\mathbb{R}^{n_t\times V}.
 $$
@@ -378,13 +378,13 @@ $$
 =-\sum_t\sum_{v=1}^{V}q_{t,v}\log p_{t,v}.
 $$
 
-padding 位置不参与 loss。普通 one-hot 标签只给正确 token 概率 1，其他 token 概率 0；原论文额外用了 label smoothing，系数 $\epsilon_{ls}=0.1$。直观上，它把少量概率从正确类别分给其他类别，避免模型把预测做得过度自信。按常见写法：
+padding 位置不参与 loss。普通 one-hot 标签只给正确 token 概率 1，其他 token 概率 0；原论文额外用了 label smoothing，系数 $\epsilon_{\mathrm{ls}}=0.1$。直观上，它把少量概率从正确类别分给其他类别，避免模型把预测做得过度自信。按常见写法：
 
 $$
 q_{t,v}=
 \begin{cases}
-1-\epsilon_{ls}, & v=y_t,\\
-\frac{\epsilon_{ls}}{V-1}, & v\ne y_t.
+1-\epsilon_{\mathrm{ls}}, & v=y_t,\\
+\frac{\epsilon_{\mathrm{ls}}}{V-1}, & v\ne y_t.
 \end{cases}
 $$
 
@@ -403,14 +403,13 @@ $$
 学习率不是常数，而是：
 
 $$
-lrate=d_{model}^{-0.5}\cdot
-\min\left(step\_num^{-0.5},\;
-step\_num\cdot warmup\_steps^{-1.5}\right).
+\mathrm{lr}=d_{\mathrm{model}}^{-1/2}\cdot
+\min\left(t^{-1/2},\;t\cdot w^{-3/2}\right).
 $$
 
-其中 $warmup\_steps=4000$。前 4000 步学习率线性上升，避免训练刚开始参数还很不稳定时走得太猛；之后按步数的平方根倒数衰减。
+其中 $t$ 表示当前训练步数，$w=4000$ 表示 warmup 步数。前 4000 步学习率线性上升，避免训练刚开始参数还很不稳定时走得太猛；之后按步数的平方根倒数衰减。
 
-此外，base model 使用 $P_{drop}=0.1$ 的 dropout。按照论文 5.4 节的描述，dropout 被用在各子层输出，以及 embedding 与位置编码之和上。训练配置里最需要记住的几项就是：Adam 的特殊参数、4000 步 warmup、0.1 dropout 和 0.1 label smoothing。
+此外，base model 使用 $P_{\mathrm{drop}}=0.1$ 的 dropout。按照论文 5.4 节的描述，dropout 被用在各子层输出，以及 embedding 与位置编码之和上。训练配置里最需要记住的几项就是：Adam 的特殊参数、4000 步 warmup、0.1 dropout 和 0.1 label smoothing。
 
 ## 最后按数据流重新串一次
 

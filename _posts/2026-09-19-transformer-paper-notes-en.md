@@ -34,28 +34,28 @@ The rest of this note follows the flow of data through the model. Two details ar
 
 ## Token embedding
 
-The input text is first tokenized and then embedded. Section 3.4 of the paper says that learned embeddings convert both input and output tokens into $d_{model}$-dimensional vectors. A linear transformation followed by softmax then converts the decoder output into probabilities for the next token.
+The input text is first tokenized and then embedded. Section 3.4 of the paper says that learned embeddings convert both input and output tokens into $d_{\mathrm{model}}$-dimensional vectors. A linear transformation followed by softmax then converts the decoder output into probabilities for the next token.
 
 As a simplified example, the string “今天我在图书馆读书” may be split into tokens such as “今天 / 我 / 在 / 图书馆 / 读书.” This is only an illustration: the actual split depends on the tokenizer, and a token does not have to correspond to a complete word. Each token is then mapped to an id in the vocabulary, such as 19 for “我” and 2994 for “图书馆.”
 
-Suppose the vocabulary size is $V=30000$ and, as in the original paper, $d_{model}=512$. The model learns an embedding matrix:
+Suppose the vocabulary size is $V=30000$ and, as in the original paper, $d_{\mathrm{model}}=512$. The model learns an embedding matrix:
 
 $$
-E\in\mathbb{R}^{V\times d_{model}}
+E\in\mathbb{R}^{V\times d_{\mathrm{model}}}
 =\mathbb{R}^{30000\times512}.
 $$
 
 Looking up a token id simply selects the corresponding row of this matrix. The embedding of one token is therefore a 512-dimensional vector, while a sentence containing $n$ tokens gives:
 
 $$
-X_{emb}\in\mathbb{R}^{n\times d_{model}}.
+X_{\mathrm{emb}}\in\mathbb{R}^{n\times d_{\mathrm{model}}}.
 $$
 
-Each row represents one token, and each column is one feature dimension in the representation space. Real implementations normally include a batch dimension, so the tensor shape is $[B,n,d_{model}]$. I omit the batch dimension below to keep the equations readable.
+Each row represents one token, and each column is one feature dimension in the representation space. Real implementations normally include a batch dimension, so the tensor shape is $[B,n,d_{\mathrm{model}}]$. I omit the batch dimension below to keep the equations readable.
 
 The original paper includes two details that are easy to overlook:
 
-- each embedding vector is multiplied by $\sqrt{d_{model}}$ before positional encoding is added;
+- each embedding vector is multiplied by $\sqrt{d_{\mathrm{model}}}$ before positional encoding is added;
 - the two embedding layers and the linear transformation before softmax share the same weight matrix. The two embedding layers are the encoder input embedding and decoder target-language embedding. The paper uses a shared vocabulary, which makes this weight sharing possible.
 
 ## Positional encoding
@@ -69,42 +69,42 @@ Self-attention computes relationships from vector content. If the tokens and cor
 The original paper uses fixed sine and cosine positional encodings:
 
 $$
-PE(pos,2i)=\sin\left(\frac{pos}{10000^{2i/d_{model}}}\right),
+\operatorname{PE}(\mathrm{pos},2i)=\sin\left(\frac{\mathrm{pos}}{10000^{2i/d_{\mathrm{model}}}}\right),
 $$
 
 $$
-PE(pos,2i+1)=\cos\left(\frac{pos}{10000^{2i/d_{model}}}\right).
+\operatorname{PE}(\mathrm{pos},2i+1)=\cos\left(\frac{\mathrm{pos}}{10000^{2i/d_{\mathrm{model}}}}\right).
 $$
 
-Here, $pos$ is the token's position in the sequence and $i$ indexes a sine/cosine frequency pair:
+Here, $\mathrm{pos}$ is the token's position in the sequence and $i$ indexes a sine/cosine frequency pair:
 
 $$
-i=0,1,\ldots,\frac{d_{model}}{2}-1.
+i=0,1,\ldots,\frac{d_{\mathrm{model}}}{2}-1.
 $$
 
-My original intuition that “$i$ should not simply be understood as the dimension” was mostly correct, but it can be stated more precisely: $i$ indexes a frequency pair, and each $i$ corresponds to dimensions $2i$ and $2i+1$. When $d_{model}=512$, $i$ ranges from 0 to 255, covering dimensions 0 through 511 rather than 0 through 256.
+My original intuition that “$i$ should not simply be understood as the dimension” was mostly correct, but it can be stated more precisely: $i$ indexes a frequency pair, and each $i$ corresponds to dimensions $2i$ and $2i+1$. When $d_{\mathrm{model}}=512$, $i$ ranges from 0 to 255, covering dimensions 0 through 511 rather than 0 through 256.
 
-For example, for a token at $pos=3$:
+For example, for a token at $\mathrm{pos}=3$:
 
 $$
 \begin{aligned}
-PE(3,0)&=\sin(3),\\
-PE(3,1)&=\cos(3),\\
-PE(3,2)&=\sin\left(\frac{3}{10000^{2/512}}\right),\\
-PE(3,3)&=\cos\left(\frac{3}{10000^{2/512}}\right),\\
+\operatorname{PE}(3,0)&=\sin(3),\\
+\operatorname{PE}(3,1)&=\cos(3),\\
+\operatorname{PE}(3,2)&=\sin\left(\frac{3}{10000^{2/512}}\right),\\
+\operatorname{PE}(3,3)&=\cos\left(\frac{3}{10000^{2/512}}\right),\\
 &\ \vdots\\
-PE(3,510)&=\sin\left(\frac{3}{10000^{510/512}}\right),\\
-PE(3,511)&=\cos\left(\frac{3}{10000^{510/512}}\right).
+\operatorname{PE}(3,510)&=\sin\left(\frac{3}{10000^{510/512}}\right),\\
+\operatorname{PE}(3,511)&=\cos\left(\frac{3}{10000^{510/512}}\right).
 \end{aligned}
 $$
 
 This produces a 512-dimensional position vector. It is added element by element to the token embedding rather than concatenated with it:
 
 $$
-X_0=\sqrt{d_{model}}X_{emb}+PE.
+X_0=\sqrt{d_{\mathrm{model}}}X_{\mathrm{emb}}+\mathrm{PE}.
 $$
 
-The result still has shape $n\times512$, which allows every later sublayer to preserve the same $d_{model}$. The paper also reports that learned positional embeddings produced nearly identical results. The authors chose sinusoidal encoding because it might extrapolate to sequence lengths not seen during training.
+The result still has shape $n\times512$, which allows every later sublayer to preserve the same $d_{\mathrm{model}}$. The paper also reports that learned positional embeddings produced nearly identical results. The authors chose sinusoidal encoding because it might extrapolate to sequence lengths not seen during training.
 
 ![Input after adding positional encoding](/assets/img/transformer-notes/positional-encoding-example.png)
 
@@ -134,18 +134,18 @@ x_2\\
 \vdots\\
 x_n
 \end{bmatrix}
-\in\mathbb{R}^{n\times d_{model}},
+\in\mathbb{R}^{n\times d_{\mathrm{model}}},
 $$
 
-where $x_j\in\mathbb{R}^{d_{model}}$ is the row vector for token $j$. The projection matrices are:
+where $x_j\in\mathbb{R}^{d_{\mathrm{model}}}$ is the row vector for token $j$. The projection matrices are:
 
 $$
-W^Q\in\mathbb{R}^{d_{model}\times d_k},\qquad
-W^K\in\mathbb{R}^{d_{model}\times d_k},\qquad
-W^V\in\mathbb{R}^{d_{model}\times d_v}.
+W^Q\in\mathbb{R}^{d_{\mathrm{model}}\times d_k},\qquad
+W^K\in\mathbb{R}^{d_{\mathrm{model}}\times d_k},\qquad
+W^V\in\mathbb{R}^{d_{\mathrm{model}}\times d_v}.
 $$
 
-The first dimension of each projection matrix is $d_{model}$, not the token count $n$. The model must handle sentences of different lengths, so the size of a learned parameter cannot depend on the current sequence length.
+The first dimension of each projection matrix is $d_{\mathrm{model}}$, not the token count $n$. The model must handle sentences of different lengths, so the size of a learned parameter cannot depend on the current sequence length.
 
 Then:
 
@@ -161,7 +161,7 @@ $$
 V=XW^V\in\mathbb{R}^{n\times d_v}.
 $$
 
-$d_q$ and $d_k$ have to be equal so that $QK^T$ is defined; the shared dimension is normally written simply as $d_k$. There is no requirement that $d_v=d_{model}$. In each head of the original Transformer, $d_k=d_v=64$.
+$d_q$ and $d_k$ have to be equal so that $QK^T$ is defined; the shared dimension is normally written simply as $d_k$. There is no requirement that $d_v=d_{\mathrm{model}}$. In each head of the original Transformer, $d_k=d_v=64$.
 
 ### 2. Matching queries with keys
 
@@ -202,8 +202,8 @@ The issue is therefore not that matrix multiplication “squares every number.�
 A more complete attention equation is:
 
 $$
-Attention(Q,K,V)
-=softmax\left(\frac{QK^T}{\sqrt{d_k}}+M\right)V.
+\operatorname{Attention}(Q,K,V)
+=\operatorname{softmax}\left(\frac{QK^T}{\sqrt{d_k}}+M\right)V.
 $$
 
 For a connection that is not allowed, the corresponding entry in the mask $M$ is set to $-\infty$; allowed entries are set to 0. After softmax, the weight of a masked position becomes 0.
@@ -246,25 +246,25 @@ The scaled dot-product attention above is only one head. Multi-head attention pr
 To avoid overloading the notation, let the three inputs to the attention sublayer be $X_Q$, $X_K$, and $X_V$:
 
 $$
-head_i=Attention(X_QW_i^Q,X_KW_i^K,X_VW_i^V),
+\mathrm{head}_i=\operatorname{Attention}(X_QW_i^Q,X_KW_i^K,X_VW_i^V),
 $$
 
 $$
-MultiHead(X_Q,X_K,X_V)
-=Concat(head_1,\ldots,head_h)W^O.
+\operatorname{MultiHead}(X_Q,X_K,X_V)
+=\operatorname{Concat}(\mathrm{head}_1,\ldots,\mathrm{head}_h)W^O.
 $$
 
 The projection matrices for each head are:
 
 $$
-W_i^Q,W_i^K\in\mathbb{R}^{d_{model}\times d_k},\qquad
-W_i^V\in\mathbb{R}^{d_{model}\times d_v}.
+W_i^Q,W_i^K\in\mathbb{R}^{d_{\mathrm{model}}\times d_k},\qquad
+W_i^V\in\mathbb{R}^{d_{\mathrm{model}}\times d_v}.
 $$
 
 In the original paper:
 
 $$
-h=8,\qquad d_k=d_v=\frac{d_{model}}{h}=\frac{512}{8}=64.
+h=8,\qquad d_k=d_v=\frac{d_{\mathrm{model}}}{h}=\frac{512}{8}=64.
 $$
 
 These 64 dimensions are not selected directly from the original 512 dimensions. Each projection reads all 512 input features and learns a linear combination that produces a new 64-dimensional representation.
@@ -272,18 +272,18 @@ These 64 dimensions are not selected directly from the original 512 dimensions. 
 The output of each head therefore has shape $n_q\times64$. Concatenating eight heads along the final feature dimension gives:
 
 $$
-Concat(head_1,\ldots,head_8)
+\operatorname{Concat}(\mathrm{head}_1,\ldots,\mathrm{head}_8)
 \in\mathbb{R}^{n_q\times512}.
 $$
 
 Finally:
 
 $$
-W^O\in\mathbb{R}^{hd_v\times d_{model}}
+W^O\in\mathbb{R}^{hd_v\times d_{\mathrm{model}}}
 =\mathbb{R}^{512\times512}.
 $$
 
-$W^O$ does more than merely “restore the dimensions.” It performs a learned mixing of the features produced by different heads and maps the result back to $d_{model}$, making it possible to add the sublayer output to its input through a residual connection. Without $W^O$, the head outputs would only be mechanically placed next to each other, with no final recombination inside the sublayer.
+$W^O$ does more than merely “restore the dimensions.” It performs a learned mixing of the features produced by different heads and maps the result back to $d_{\mathrm{model}}$, making it possible to add the sublayer output to its input through a residual connection. Without $W^O$, the head outputs would only be mechanically placed next to each other, with no final recombination inside the sublayer.
 
 ![Multi-Head Attention](/assets/img/transformer-notes/multi-head-attention.png)
 
@@ -302,7 +302,7 @@ Cross-attention is especially important: $Q$ comes from the decoder, while $K$ a
 Following the data flow, each attention block is followed by Add & Norm. The original paper applies the following operation around every sublayer:
 
 $$
-LayerNorm(x+Sublayer(x)).
+\operatorname{LayerNorm}(x+\operatorname{Sublayer}(x)).
 $$
 
 Here, `Sublayer` can be multi-head attention or a feed-forward network. The paper also applies dropout to the sublayer output before adding it to $x$. This arrangement is now commonly called Post-LN because LayerNorm comes after the residual addition. Many modern Transformers use Pre-LN instead, but that is not the structure shown in the original Figure 1.
@@ -311,7 +311,7 @@ The residual connection is not there because “six layers are already good enou
 
 LayerNorm normalizes the feature dimensions of each token and then applies learned scaling and shifting parameters. It does not depend on statistics from other examples in the batch, making it suitable for sequences of varying lengths.
 
-Residual addition also requires both sides to have the same shape. This is one direct reason why every sublayer eventually maps its output back to $d_{model}=512$.
+Residual addition also requires both sides to have the same shape. This is one direct reason why every sublayer eventually maps its output back to $d_{\mathrm{model}}=512$.
 
 ## Position-wise Feed-Forward Network
 
@@ -320,7 +320,7 @@ Residual addition also requires both sides to have the same shape. This is one d
 Every encoder and decoder layer also contains a position-wise feed-forward network:
 
 $$
-FFN(x)=\max(0,xW_1+b_1)W_2+b_2.
+\operatorname{FFN}(x)=\max(0,xW_1+b_1)W_2+b_2.
 $$
 
 The original paper uses ReLU, with dimensions:
@@ -344,7 +344,7 @@ Each decoder layer has one more sublayer than an encoder layer. Its order is:
 Every sublayer is wrapped by a residual connection and LayerNorm. After six decoder layers, the model has one hidden vector for every target position:
 
 $$
-H\in\mathbb{R}^{n_t\times d_{model}}.
+H\in\mathbb{R}^{n_t\times d_{\mathrm{model}}}.
 $$
 
 ![Linear and Softmax output layers](/assets/img/transformer-notes/linear-softmax.png)
@@ -352,7 +352,7 @@ $$
 A linear layer then projects each vector to the vocabulary size:
 
 $$
-Z=HW_{vocab}^T+b,
+Z=HW_{\mathrm{vocab}}^T+b,
 \qquad
 Z\in\mathbb{R}^{n_t\times V}.
 $$
@@ -379,13 +379,13 @@ $$
 =-\sum_t\sum_{v=1}^{V}q_{t,v}\log p_{t,v}.
 $$
 
-Padding positions do not contribute to the loss. A regular one-hot label assigns probability 1 to the correct token and 0 to every other token. The original paper additionally uses label smoothing with $\epsilon_{ls}=0.1$. Intuitively, it moves a small amount of probability mass from the correct class to the other classes, preventing the model from becoming excessively confident. In a common formulation:
+Padding positions do not contribute to the loss. A regular one-hot label assigns probability 1 to the correct token and 0 to every other token. The original paper additionally uses label smoothing with $\epsilon_{\mathrm{ls}}=0.1$. Intuitively, it moves a small amount of probability mass from the correct class to the other classes, preventing the model from becoming excessively confident. In a common formulation:
 
 $$
 q_{t,v}=
 \begin{cases}
-1-\epsilon_{ls}, & v=y_t,\\
-\frac{\epsilon_{ls}}{V-1}, & v\ne y_t.
+1-\epsilon_{\mathrm{ls}}, & v=y_t,\\
+\frac{\epsilon_{\mathrm{ls}}}{V-1}, & v\ne y_t.
 \end{cases}
 $$
 
@@ -404,14 +404,13 @@ $$
 The learning rate is not constant:
 
 $$
-lrate=d_{model}^{-0.5}\cdot
-\min\left(step\_num^{-0.5},\;
-step\_num\cdot warmup\_steps^{-1.5}\right).
+\mathrm{lr}=d_{\mathrm{model}}^{-1/2}\cdot
+\min\left(t^{-1/2},\;t\cdot w^{-3/2}\right).
 $$
 
-Here, $warmup\_steps=4000$. The learning rate increases linearly during the first 4000 steps, avoiding overly aggressive updates while the parameters are still unstable, and then decays proportionally to the inverse square root of the step number.
+Here, $t$ is the current training step and $w=4000$ is the number of warmup steps. The learning rate increases linearly during the first 4000 steps, avoiding overly aggressive updates while the parameters are still unstable, and then decays proportionally to the inverse square root of the step number.
 
-The base model also uses dropout with $P_{drop}=0.1$. According to Section 5.4 of the paper, dropout is applied to each sublayer's output and to the sum of embeddings and positional encodings. The training details most worth remembering are the unusual Adam parameters, 4000 warmup steps, 0.1 dropout, and 0.1 label smoothing.
+The base model also uses dropout with $P_{\mathrm{drop}}=0.1$. According to Section 5.4 of the paper, dropout is applied to each sublayer's output and to the sum of embeddings and positional encodings. The training details most worth remembering are the unusual Adam parameters, 4000 warmup steps, 0.1 dropout, and 0.1 label smoothing.
 
 ## Putting the data flow together one last time
 

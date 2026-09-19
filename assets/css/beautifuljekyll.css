@@ -1018,6 +1018,29 @@ pre {
   max-width: 100%;
 }
 
+/* Keep article equations readable without forcing the page wider on mobile. */
+.blog-post mjx-container[jax="CHTML"] {
+  max-width: 100%;
+}
+
+.blog-post mjx-container[jax="CHTML"][display="true"] {
+  margin: 1.4rem 0 !important;
+  padding: 0.2rem 0 0.35rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.blog-post mjx-container[jax="CHTML"]:not([display="true"]) {
+  margin: 0 0.08em;
+}
+
+@media (max-width: 575px) {
+  .blog-post mjx-container[jax="CHTML"][display="true"] {
+    font-size: 0.94em;
+  }
+}
+
 .blog-post .caption {
   text-align: center;
   font-size: 0.875rem;
