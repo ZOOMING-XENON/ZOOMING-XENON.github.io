@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Activities
-subtitle: PLACEHOLDER —— 简介占位
 ---
+# PandaAI Factor Mining Competition
+<img src="/assets/img/activity_pandaai_factor_digging.jpg" width="50%">
 
-PLACEHOLDER —— 内容待补充。
