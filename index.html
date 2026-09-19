@@ -18,8 +18,9 @@ js:
 <!-- 最新 News：取最近 3 篇，全部文章见 /blog -->
 <section class="home-news">
   <h2>Latest News</h2>
+  {% assign visible_posts = site.posts | where_exp: "post", "post.hide_from_feed != true" %}
   <ul class="posts-list list-unstyled" role="list">
-    {% for post in site.posts limit: 3 %}
+    {% for post in visible_posts limit: 3 %}
     <li class="post-preview">
       <a href="{{ post.url | relative_url }}">
         <h3 class="post-title">{{ post.title | strip_html }}</h3>

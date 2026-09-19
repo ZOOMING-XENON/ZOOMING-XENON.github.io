@@ -39,6 +39,23 @@ layout: base
         </div>
       {% endif %}
 
+      {% if page.translation_key %}
+        {% assign translations = site.posts | where: "translation_key", page.translation_key | sort: "language_order" %}
+        <nav class="language-switcher" aria-label="Article language">
+          {% for translation in translations %}
+            {% if translation.url == page.url %}
+              <span class="language-switcher__link is-active" aria-current="page">
+                {{ translation.language_name | default: translation.language }}
+              </span>
+            {% else %}
+              <a class="language-switcher__link" href="{{ translation.url | relative_url }}" hreflang="{{ translation.language }}">
+                {{ translation.language_name | default: translation.language }}
+              </a>
+            {% endif %}
+          {% endfor %}
+        </nav>
+      {% endif %}
+
       <div class="blog-post">
         {{ content }}
       </div>
@@ -64,24 +81,34 @@ layout: base
         {% include social-share.html %}
       {% endif %}
 
+      {% unless page.hide_from_feed %}
+      {% assign previous_post = page.previous %}
+      {% if previous_post.hide_from_feed %}
+        {% assign previous_post = previous_post.previous %}
+      {% endif %}
+      {% assign next_post = page.next %}
+      {% if next_post.hide_from_feed %}
+        {% assign next_post = next_post.next %}
+      {% endif %}
       <ul class="pagination blog-pager">
-        {% if page.previous.url %}
+        {% if previous_post.url %}
         <li class="page-item previous">
-          <a class="page-link" href="{{ page.previous.url | relative_url }}" data-toggle="tooltip" data-placement="top" title="{{page.previous.title | strip_html | xml_escape}}">
+          <a class="page-link" href="{{ previous_post.url | relative_url }}" data-toggle="tooltip" data-placement="top" title="{{ previous_post.title | strip_html | xml_escape }}">
             <i class="fas fa-arrow-left" alt="Previous Post"></i>
             <span class="d-none d-sm-inline-block">Previous Post</span>
           </a>
         </li>
         {% endif %}
-        {% if page.next.url %}
+        {% if next_post.url %}
         <li class="page-item next">
-          <a class="page-link" href="{{ page.next.url | relative_url }}" data-toggle="tooltip" data-placement="top" title="{{page.next.title | strip_html | xml_escape}}">
+          <a class="page-link" href="{{ next_post.url | relative_url }}" data-toggle="tooltip" data-placement="top" title="{{ next_post.title | strip_html | xml_escape }}">
             <span class="d-none d-sm-inline-block">Next Post</span>
             <i class="fas fa-arrow-right" alt="Next Post"></i>
           </a>
         </li>
         {% endif %}
       </ul>
+      {% endunless %}
       {% include comments.html %}
     </div>
   </div>

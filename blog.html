@@ -3,8 +3,9 @@ layout: page
 title: Blog
 ---
 
+{% assign visible_posts = site.posts | where_exp: "post", "post.hide_from_feed != true" %}
 <ul class="posts-list list-unstyled" role="list">
-  {% for post in site.posts %}
+  {% for post in visible_posts %}
   <li class="post-preview">
     <article>
       <a href="{{ post.url | relative_url }}">

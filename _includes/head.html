@@ -140,6 +140,17 @@
   <link rel="canonical" href="{{ page.url | absolute_url | strip_index }}">
   {% endif %}
 
+  {% if page.translation_key %}
+    {% assign translations = site.posts | where: "translation_key", page.translation_key | sort: "language_order" %}
+    {% for translation in translations %}
+      <link rel="alternate" hreflang="{{ translation.language }}" href="{{ translation.url | absolute_url }}">
+    {% endfor %}
+    {% assign default_translation = translations | where_exp: "translation", "translation.hide_from_feed != true" | first %}
+    {% if default_translation %}
+      <link rel="alternate" hreflang="x-default" href="{{ default_translation.url | absolute_url }}">
+    {% endif %}
+  {% endif %}
+
   {% if img != "" and img != site.avatar %}
   <meta name="twitter:card" content="summary_large_image">
   {% else %}

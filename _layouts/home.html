@@ -5,6 +5,7 @@ layout: page
 {{ content }}
 
 {% assign posts = paginator.posts | default: site.posts %}
+{% assign posts = posts | where_exp: "post", "post.hide_from_feed != true" %}
 
 <!-- role="list" needed so that `list-style: none` in Safari doesn't remove the list semantics -->
 <ul class="posts-list list-unstyled" role="list">

@@ -2,7 +2,8 @@
 layout: null
 ---
 [ 
-{% for post in site.posts %} 
+{% assign visible_posts = site.posts | where_exp: "post", "post.hide_from_feed != true" %}
+{% for post in visible_posts %} 
 { 
 "title"    : "{% if post.title != "" %}{{ post.title | strip_html | escape }}{% else %}{{ post.excerpt | strip_html | escape | strip }}{%endif%}", 
 "desc"     : "{% if post.title != "" %}{{ post.title | strip_html | escape }}{% else %}{{ post.excerpt | strip_html | escape | strip }}{%endif%}", 
